@@ -5,22 +5,18 @@
   var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var isFinePointer = window.matchMedia('(pointer: fine)').matches;
 
-  /* ---------- scroll reveal ---------- */
+  /* ---------- glitch scroll reveal ---------- */
+  var revealables = document.querySelectorAll(
+    '.project-card, .about-text, .contact-links, .notebook-card, .gallery-item'
+  );
+  revealables.forEach(function (el) { el.classList.add('reveal-item'); });
+
   if (!prefersReduced && 'IntersectionObserver' in window) {
-    var revealables = document.querySelectorAll(
-      '.project-card, .about-text, .contact-links, .notebook-card, .gallery-item'
-    );
-    revealables.forEach(function (el) {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(14px)';
-      el.style.transition = 'opacity .6s ease, transform .6s ease';
-    });
     var observer = new IntersectionObserver(
       function (entries) {
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
+            entry.target.classList.add('is-visible');
             observer.unobserve(entry.target);
           }
         });
@@ -28,38 +24,43 @@
       { threshold: 0.15 }
     );
     revealables.forEach(function (el) { observer.observe(el); });
+  } else {
+    revealables.forEach(function (el) { el.classList.add('is-visible'); });
   }
 
-  /* ---------- intro sequence (plays once per browser session) ---------- */
-  var introKey = 'ms-intro-played';
-  var alreadyPlayed = sessionStorage.getItem(introKey);
+  /* ---------- entry gate (plays once per browser session) ---------- */
+  var gateKey = 'ms-gate-opened';
+  var alreadyOpened = sessionStorage.getItem(gateKey);
 
-  if (!alreadyPlayed && !prefersReduced) {
-    var loader = document.createElement('div');
-    loader.className = 'intro-loader';
-    loader.innerHTML =
-      '<div class="intro-mark">MS</div>' +
-      '<div class="intro-line"></div>' +
-      '<button class="intro-skip" type="button">Skip</button>';
-    document.body.appendChild(loader);
-    document.body.classList.add('intro-active');
+  if (!alreadyOpened && !prefersReduced) {
+    var gate = document.createElement('div');
+    gate.className = 'gate';
+    gate.innerHTML =
+      '<div class="gate-noise" aria-hidden="true"></div>' +
+      '<p class="gate-label">SYSTEM LOCKED</p>' +
+      '<button type="button" class="gate-button" data-text="ENTER">ENTER</button>' +
+      '<p class="gate-hint">click, or press enter, to continue</p>';
+    document.body.appendChild(gate);
+    document.body.classList.add('gate-active');
 
-    var finished = false;
-    function finishIntro() {
-      if (finished) return;
-      finished = true;
-      loader.classList.add('is-hiding');
-      document.body.classList.remove('intro-active');
-      sessionStorage.setItem(introKey, '1');
-      window.removeEventListener('keydown', finishIntro);
-      setTimeout(function () { loader.remove(); }, 500);
+    var opened = false;
+    function openGate() {
+      if (opened) return;
+      opened = true;
+      gate.classList.add('is-hiding');
+      document.body.classList.remove('gate-active');
+      sessionStorage.setItem(gateKey, '1');
+      window.removeEventListener('keydown', onKey);
+      setTimeout(function () { gate.remove(); }, 450);
+    }
+    function onKey(e) {
+      if (e.key === 'Enter' || e.key === ' ') openGate();
     }
 
-    loader.querySelector('.intro-skip').addEventListener('click', finishIntro);
-    window.addEventListener('keydown', finishIntro);
-    setTimeout(finishIntro, 1500);
+    gate.querySelector('.gate-button').addEventListener('click', openGate);
+    window.addEventListener('keydown', onKey);
   } else {
-    sessionStorage.setItem(introKey, '1');
+    sessionStorage.setItem(gateKey, '1');
   }
 
   /* ---------- custom cursor + ambient light ---------- */
@@ -88,7 +89,7 @@
         ready = true;
         document.body.classList.add('cursor-ready');
       }
-      dot.style.transform = 'translate(' + (mx - 4) + 'px,' + (my - 4) + 'px)';
+      dot.style.transform = 'translate(' + mx + 'px,' + my + 'px) translate(-50%, -50%)';
       glow.style.setProperty('--mx', mx + 'px');
       glow.style.setProperty('--my', my + 'px');
     });
@@ -96,7 +97,7 @@
     function loop() {
       rx += (mx - rx) * 0.18;
       ry += (my - ry) * 0.18;
-      ring.style.transform = 'translate(' + (rx - 16) + 'px,' + (ry - 16) + 'px)';
+      ring.style.transform = 'translate(' + rx + 'px,' + ry + 'px) translate(-50%, -50%)';
       requestAnimationFrame(loop);
     }
     requestAnimationFrame(loop);
