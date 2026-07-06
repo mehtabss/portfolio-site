@@ -438,7 +438,13 @@ a.project-card:hover .card-view{ color: var(--accent); }
   object-fit: cover;
   display: block;
 }
-.cad-grid .gallery-item img{ aspect-ratio: 16 / 10; }
+.cad-grid .gallery-item img{
+  aspect-ratio: 16 / 10;
+  object-fit: contain;
+  background: #f5f5f2;
+  padding: 20px;
+  border: 1px solid var(--border);
+}
 .ph-img{
   aspect-ratio: 4 / 3;
   border: 1px dashed var(--border-strong);
